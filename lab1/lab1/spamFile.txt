@@ -1,0 +1,3 @@
+﻿free 4
+car 2
+parking 1
