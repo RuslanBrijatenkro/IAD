@@ -1,0 +1,6 @@
+free 4
+car 2
+parking 1
+buy 1
+auto 1
+parts 1

@@ -15,33 +15,40 @@ namespace lab1
 			SortMessages sortMessages = new SortMessages();
 			sortMessages.Start();
 			Console.ReadKey();
-
 		}
 		class SortMessages
 		{
+			string lowword;
 			int key;
 			double[] doublemas = new double[2];
 			string[] message= new string[100];
 			bool status;
 			StreamWriter writer;
-			StreamReader reader;
 			List<Dictionary<string,int>> dictionaries = new List<Dictionary<string,int>>();
 			Dictionary<string, double> dictionary = new Dictionary<string, double>();
 			Dictionary<string, double> normalizeSpam = new Dictionary<string, double>();
 			Dictionary<string, double> normalizeNotSpam = new Dictionary<string, double>();
-			//ArrayList spam = new ArrayList();
-			ArrayList notspam =new ArrayList();
 			public void Start()
 			{
 				dictionaries.Add(new Dictionary<string, int>());
 				dictionaries.Add(new Dictionary<string, int>());
 				ReadFiles();
+				Initialization();
 				while (key!=2)
 				{
 					Console.WriteLine("1-Study");
 					Console.WriteLine("2-End");
 					Console.WriteLine("3-Spam or not spam");
-					key = Convert.ToInt32(Console.ReadLine());
+					try
+					{
+						key = Convert.ToInt32(Console.ReadLine());
+					}
+					catch(Exception)
+					{
+						Console.Clear();
+						Console.WriteLine("Enter right value: ");
+						key = 4;
+					}
 					switch (key)
 					{
 						case 1:
@@ -53,10 +60,12 @@ namespace lab1
 						case 3:
 							SpamOrNotSpam();
 							break;
+						case 4:
+							break;
 					}
 				}
 			}
-			public void SpamOrNotSpam()
+			public void Initialization()
 			{
 				foreach(KeyValuePair<string,int> keyValuePair in dictionaries[0])
 				{
@@ -79,7 +88,7 @@ namespace lab1
 					{
 						normalizeNotSpam.Add(keyValuePair.Key, ((dictionaries[0][keyValuePair.Key] + 0.5) / (keyValuePair.Value + 1)));
 					}
-					catch(Exception e)
+					catch(Exception)
 					{
 						normalizeNotSpam.Add(keyValuePair.Key, 1-((dictionaries[1][keyValuePair.Key] + 0.5) / (keyValuePair.Value + 1)));
 					}
@@ -91,21 +100,29 @@ namespace lab1
 					{
 						normalizeSpam.Add(keyValuePair.Key, ((dictionaries[1][keyValuePair.Key] + 0.5) / (keyValuePair.Value + 1)));
 					}
-					catch(Exception e)
+					catch(Exception)
 					{
 						normalizeSpam.Add(keyValuePair.Key, 1-((dictionaries[0][keyValuePair.Key] + 0.5) / (keyValuePair.Value + 1)));
 					}
-					
 				}
+			}
+			public void SpamOrNotSpam()
+			{
 				Console.WriteLine("Enter message: ");
 				message=Console.ReadLine().Split(' ');
 				doublemas[0] = Math.Log(0.5);
 				doublemas[1] = Math.Log(0.5);
 				foreach (string element in message)
 				{
-					Console.WriteLine(normalizeNotSpam[element]+normalizeSpam[element]);
-					doublemas[0] += Math.Log(normalizeNotSpam[element]);
-					doublemas[1] += Math.Log(normalizeSpam[element]);
+					lowword = element.ToLower();
+					try
+					{
+						Console.WriteLine(normalizeNotSpam[lowword] + normalizeSpam[lowword]);
+						doublemas[0] += Math.Log(normalizeNotSpam[lowword]);
+						doublemas[1] += Math.Log(normalizeSpam[lowword]);
+					}
+					catch (Exception) { }
+					
 				}
 				if(doublemas[0]>doublemas[1])
 					Console.WriteLine("Not a spam");
@@ -115,23 +132,28 @@ namespace lab1
 			}
 			public void WriteFiles()
 			{
-				writer = new StreamWriter("notSpamFile.txt", true);
-				foreach (var item in dictionaries)
+				using(StreamWriter writer= new StreamWriter(@"C:\Users\brija\Desktop\'.net'\IAD\lab1\lab1\notSpamFile.txt"))
 				{
-					foreach (KeyValuePair<string,int> keyValuePair in item)
+					foreach (KeyValuePair<string, int> keyValuePair in dictionaries[0])
 					{
-						Console.WriteLine(keyValuePair.Key + " " + keyValuePair.Value);
+						//Console.WriteLine(keyValuePair.Key + " " + keyValuePair.Value);
 						writer.WriteLine(keyValuePair.Key + " " + keyValuePair.Value);
 					}
-					writer.Close();
-					writer = new StreamWriter("spamFile.txt", true);
+				}
+				using(StreamWriter writer = new StreamWriter(@"C:\Users\brija\Desktop\'.net'\IAD\lab1\lab1\spamFile.txt", false))
+				{
+					foreach (KeyValuePair<string, int> keyValuePair in dictionaries[1])
+					{
+						//Console.WriteLine(keyValuePair.Key + " " + keyValuePair.Value);
+						writer.WriteLine(keyValuePair.Key + " " + keyValuePair.Value);
+					}
 				}
 			}
 			public void ReadFiles()
 			{
 				try
 				{
-					using (StreamReader reader = new StreamReader(@"C:\Users\brija\Desktop\'.net'\IAD\lab1\lab1\lab1\notSpamFile.txt"))
+					using (StreamReader reader = new StreamReader(@"C:\Users\brija\Desktop\'.net'\IAD\lab1\lab1\notSpamFile.txt"))
 					{
 						while ((message = reader.ReadLine().Split(' ')) != null)
 						{
@@ -139,13 +161,13 @@ namespace lab1
 						}
 					}
 				}
-				catch(Exception e)
+				catch(Exception)
 				{
 					Console.WriteLine("NotSpamFile already read");
 				}
 				try
 				{
-					using (StreamReader reader = new StreamReader(@"C:\Users\brija\Desktop\'.net'\IAD\lab1\lab1\lab1\spamFile.txt"))
+					using (StreamReader reader = new StreamReader(@"C:\Users\brija\Desktop\'.net'\IAD\lab1\lab1\spamFile.txt"))
 					{
 						while ((message = reader.ReadLine().Split(' ')) != null)
 						{
@@ -153,7 +175,7 @@ namespace lab1
 						}
 					}
 				}
-				catch(Exception e)
+				catch(Exception)
 				{
 					Console.WriteLine("SpamFile already read");
 				}
@@ -169,12 +191,14 @@ namespace lab1
 					status = Convert.ToBoolean(Console.ReadLine());
 					foreach (var word in message)
 					{
-						if (!dictionaries[Convert.ToInt32(!status)].ContainsKey(word))
-							dictionaries[Convert.ToInt32(!status)].Add(word, 0);
-
-						if (!dictionaries[Convert.ToInt32(status)].ContainsKey(word))
-							dictionaries[Convert.ToInt32(status)].Add(word, 1);
-						dictionaries[Convert.ToInt32(status)][word] = (int)dictionaries[Convert.ToInt32(status)][word] + 1;
+						lowword = word.Replace(',', ' ');
+						lowword = lowword.Trim();
+						lowword = lowword.ToLower();
+						//Console.WriteLine(lowword + "_");
+						if (!dictionaries[Convert.ToInt32(status)].ContainsKey(lowword))
+							dictionaries[Convert.ToInt32(status)].Add(lowword, 1);
+						else
+							dictionaries[Convert.ToInt32(status)][lowword] = (int)dictionaries[Convert.ToInt32(status)][lowword] + 1;
 
 					}
 					Console.WriteLine("Do you want to continue?(true or false)");

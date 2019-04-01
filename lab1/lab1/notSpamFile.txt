@@ -1,4 +1,5 @@
-﻿your 1
-car 3
-ready 2
+your 2
+car 4
+ready 3
 tomorrow 1
+is 1
