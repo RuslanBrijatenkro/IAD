@@ -9,9 +9,7 @@ namespace lab2
 {
 	class Word
 	{
-		object Parent;
-		object Left;
-		object Right;
+		public int group;
 		public string word;
 		public int wordLength;
 		public double mediana;
@@ -43,6 +41,7 @@ namespace lab2
 	}
 	class Algorithm
 	{
+		int group = 0;
 		List<Word> words = new List<Word>();
 		public void ReadFile()
 		{
@@ -70,8 +69,6 @@ namespace lab2
 						words.Add(new Word(stringMas[i], stringMas[i].Length, sentenceLength));
 						uniqueWords.Add(stringMas[i],words.Count-1);
 					}
-						
-
 					if(endSentence)
 						sentenceLength = 0;
 					else
@@ -82,39 +79,82 @@ namespace lab2
 		}
 		public void Clustering()
 		{
-			double minDistance=1000;
-			int[] minDistanceI;
-			int[] minDistanceJ;
-			double[,] distanceTable = new double[words.Count,words.Count];
-			for(int i=1;i<words.Count;i++)
+			List<Word> localWords = new List<Word>();
+			foreach(var word in words)
 			{
-				for(int j=i+1;j<words.Count;j++)
+				localWords.Add(word);
+			}
+			while (localWords.Count!=1)
+			{
+				double minDistance = 1000;
+				int minDistanceI = 0;
+				int minDistanceJ = 0;
+				double[,] distanceTable = new double[localWords.Count, localWords.Count];
+				for (int i = 0; i < localWords.Count; i++)
 				{
-					distanceTable[i, j] = Math.Sqrt(Math.Pow(words[j].wordLength-words[i].wordLength,2) + Math.Pow(words[j].mediana - words[i].mediana, 2));
-					Console.SetCursorPosition(((i-1) * 5), j-1);
-					Console.WriteLine(Math.Round(distanceTable[i, j],2) + "\t");
+					for (int j = i + 1; j < localWords.Count; j++)
+					{
+						distanceTable[i, j] = Math.Sqrt(Math.Pow(localWords[j].wordLength - localWords[i].wordLength, 2) + Math.Pow(localWords[j].mediana - localWords[i].mediana, 2));
+						if (distanceTable[i, j] < minDistance)
+						{
+							minDistance = distanceTable[i, j];
+							minDistanceI = i;
+							minDistanceJ = j;
+						}
+						//Console.SetCursorPosition((i * 5), j);
+						//Console.WriteLine(Math.Round(distanceTable[i, j], 2) + "\t");
+					}
+				}
+				localWords.Add(new Word(localWords[minDistanceI].word + " " + localWords[minDistanceJ].word, (localWords[minDistanceI].wordLength + localWords[minDistanceJ].wordLength) / 2, (localWords[minDistanceI].mediana + localWords[minDistanceJ].mediana) / 2d));
+				localWords[minDistanceI].group = ++group;
+				localWords[minDistanceJ].group = group;
+				//words.Add(localWords[localWords.Count - 1]);
+				localWords[minDistanceI] = null;
+				localWords[minDistanceJ] = null;
+				localWords.Remove(null);
+				localWords.Remove(null);
+				if (localWords.Count == 1)
+				{
+					localWords[localWords.Count - 1].group = ++group;
 				}
 			}
-			for (int i = 1; i < words.Count; i++)
+			Console.WriteLine("Clasters count:"+group);
+			DefineGroup();
+		}
+		void DefineGroup()
+		{
+			Console.WriteLine("Entry count of groups:");
+			int countOfGroups = Convert.ToInt32(Console.ReadLine());
+			int[] count = new int[countOfGroups];
+			string[] wordGroups = new string[group];
+			foreach(var word in words)
 			{
-				for (int j = i + 1; j < words.Count; j++)
+				wordGroups[word.group - 1] +=" / " + word.word;
+			}
+			for (int i = 0; i < wordGroups.Length; i++)
+			{
+				if(wordGroups[i]!=null)
+					Console.WriteLine($"Group {i+1}: "+wordGroups[i]);
+			}
+			Console.WriteLine("Entry message:");
+			string[] message=Console.ReadLine().Split(' ');
+			for (int i = 0; i < message.Length; i++)
+			{
+				for (int j = 0; j < wordGroups.Length; j++)
 				{
-					for(int q=j+1;q<words.Count;q++)
+					try
 					{
-						double maybeMin = distanceTable[i, j]-distanceTable[i, q];
-						if (maybeMin < minDistance)
+						if (wordGroups[j].Contains(message[i]))
 						{
-							minDistance = maybeMin;
-							minDistanceI = new[] { i, i };
-							minDistanceJ = new[] { j, q };
+							count[j/(group/countOfGroups)] += 1;
 						}
-
+					}
+					catch(Exception)
+					{
 					}
 				}
 			}
-			words.Add(new Word(words[i]))
-
-
+			Console.WriteLine("Message group: "+(Array.IndexOf(count,count.Max())+1));
 		}
 	}
 }
